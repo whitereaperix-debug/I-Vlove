@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#cfb0a7">
+    <title>Для тебя — маленький опрос</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <main class="page-shell">
+        <section class="quiz" aria-live="polite">
+            <svg class="question-flourish" viewBox="0 0 112 96" aria-hidden="true">
+                <path class="flourish-star" d="M56 10c4 19 10 25 29 29-19 4-25 10-29 29-4-19-10-25-29-29 19-4 25-10 29-29Z" />
+                <path class="flourish-rays" d="M56 2v5m0 64v5M18 39h5m66 0h5M30 13l4 4m44 44 4 4m0-52-4 4M34 61l-4 4" />
+                <circle class="flourish-dot" cx="21" cy="66" r="2" />
+                <circle class="flourish-dot" cx="91" cy="15" r="2" />
+            </svg>
+            <div class="quiz-heading">
+                <div class="progress" aria-label="Прогресс опроса">
+                    <span class="progress-fill" id="progress-fill"></span>
+                </div>
+            </div>
+
+            <div class="question-view" id="question-view">
+                <h1 id="question">Ты меня любишь?</h1>
+                <div class="answer-row" id="answer-row">
+                    <button class="answer-button answer-yes" data-answer="Да" type="button">Да <span aria-hidden="true">♡</span></button>
+                    <button class="answer-button answer-no" data-answer="Нет" type="button">Нет <span class="run-legs" aria-hidden="true"><i></i><i></i></span></button>
+                </div>
+                <div class="no-response" id="no-response" hidden>
+                    <p>Так не пойдёт!</p>
+                    <button class="retry-button" id="retry-button" type="button">Пройти ещё раз <span aria-hidden="true">↻</span></button>
+                </div>
+            </div>
+
+            <div class="final-view" id="final-view" hidden>
+                <div class="heart-shower" id="heart-shower" aria-hidden="true"></div>
+                <svg class="drawn-heart" viewBox="0 0 240 220" role="img" aria-label="Сердце из частиц с буквами В плюс И">
+                    <g id="heart-particles"></g>
+                    <text class="heart-initials" text-anchor="middle">
+                        <tspan class="heart-letter" x="92" y="116" style="--letter-delay: 4.5s">В</tspan>
+                        <tspan class="heart-letter" x="120" y="116" style="--letter-delay: 4.7s">+</tspan>
+                        <tspan class="heart-letter" x="148" y="116" style="--letter-delay: 4.9s">И</tspan>
+                    </text>
+                </svg>
+                <div class="love-note"><span aria-hidden="true">♡</span><p>I love you</p><span aria-hidden="true">♡</span></div>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        const questions = [
+            { text: 'Ты меня любишь?' },
+            { text: 'Ты скучаешь по мне?' },
+            { text: 'Ты хотела бы сейчас быть рядом со мной?' },
+            { text: 'Ты счастлива, что мы встретились?' },
+            { text: 'Ты хочешь приехать ко мне?' }
+        ];
+
+        let currentQuestion = 0;
+        let questionTransitionTimer;
+        const questionElement = document.querySelector('#question');
+        const progressElement = document.querySelector('#progress-fill');
+        const questionView = document.querySelector('#question-view');
+        const finalView = document.querySelector('#final-view');
+        const answerRow = document.querySelector('#answer-row');
+        const noResponse = document.querySelector('#no-response');
+        const heartParticles = document.querySelector('#heart-particles');
+        const heartShower = document.querySelector('#heart-shower');
+        const quizCard = document.querySelector('.quiz');
+        const yesButton = document.querySelector('.answer-yes');
+        const noButton = document.querySelector('.answer-no');
+        let noButtonPlaceholder = null;
+        let noButtonEscaping = false;
+        let noEscapeAnimation = null;
+
+        function showQuestion() {
+            const question = questions[currentQuestion];
+            progressElement.style.width = `${(currentQuestion / questions.length) * 100}%`;
+            questionElement.classList.add('is-blurring');
+            answerRow.classList.add('is-blurring');
+            answerRow.inert = true;
+            window.clearTimeout(questionTransitionTimer);
+            questionTransitionTimer = window.setTimeout(() => {
+                questionElement.textContent = question.text;
+                questionElement.classList.remove('is-blurring');
+                answerRow.classList.remove('is-blurring');
+                answerRow.inert = false;
+            }, 180);
+        }
+
+        function returnNoButton() {
+            stopNoButtonRun();
+            if (noButtonPlaceholder) {
+                noButtonPlaceholder.replaceWith(noButton);
+                noButtonPlaceholder = null;
+            }
+            noButton.removeAttribute('style');
+        }
+
+        function stopNoButtonRun() {
+            if (noEscapeAnimation) {
+                const bounds = noButton.getBoundingClientRect();
+                const cardBounds = quizCard.getBoundingClientRect();
+                noEscapeAnimation.cancel();
+                noButton.style.left = `${bounds.left - cardBounds.left}px`;
+                noButton.style.top = `${bounds.top - cardBounds.top}px`;
+                noEscapeAnimation = null;
+            }
+            noButton.classList.remove('is-running');
+            noButtonEscaping = false;
+        }
+
+        function createHeartParticles() {
+            heartParticles.replaceChildren();
+            const hearts = [
+            { scale: 5.3, count: 840, color: '#a74850', radius: 0.58, delay: 0 },
+            { scale: 3.1, count: 600, color: '#c77c78', radius: 0.5, delay: 400 }
+            ];
+            let particleIndex = 0;
+
+            hearts.forEach((heart) => {
+                for (let index = 0; index < heart.count; index += 1) {
+                    const angle = (index / heart.count) * Math.PI * 2;
+                    const sine = Math.sin(angle);
+                    const heartX = 16 * sine ** 3;
+                    const heartY = 13 * Math.cos(angle) - 5 * Math.cos(2 * angle) - 2 * Math.cos(3 * angle) - Math.cos(4 * angle);
+                    const particle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                    const driftAngle = particleIndex * 2.39996;
+                    const driftDistance = 58 + (particleIndex % 7) * 9;
+                    const delay = heart.delay + (index / heart.count) * 2600;
+
+                    particle.setAttribute('class', 'heart-particle');
+                    particle.setAttribute('cx', `${120 + heartX * heart.scale}`);
+                    particle.setAttribute('cy', `${110 - heartY * heart.scale}`);
+                    particle.setAttribute('r', `${heart.radius + (index % 3) * 0.045}`);
+                    particle.style.setProperty('--drift-x', `${Math.cos(driftAngle) * driftDistance}px`);
+                    particle.style.setProperty('--drift-y', `${Math.sin(driftAngle) * driftDistance}px`);
+                    particle.style.setProperty('--particle-delay', `${delay}ms`);
+                    particle.style.setProperty('--particle-color', heart.color);
+                    heartParticles.append(particle);
+                    particleIndex += 1;
+                }
+            });
+        }
+
+        function createFallingHearts() {
+            heartShower.replaceChildren();
+            for (let index = 0; index < 20; index += 1) {
+                const heart = document.createElement('span');
+                heart.className = 'falling-heart';
+                heart.textContent = index % 3 === 0 ? '♡' : '♥';
+                heart.style.left = `${Math.random() * 100}%`;
+                heart.style.setProperty('--heart-size', `${11 + Math.random() * 12}px`);
+                heart.style.setProperty('--heart-rise', `${125 + Math.random() * 100}px`);
+                heart.style.setProperty('--heart-sway', `${Math.random() * 74 - 37}px`);
+                heart.style.setProperty('--heart-turn', `${Math.random() * 80 - 40}deg`);
+                heart.style.setProperty('--heart-duration', `${2.8 + Math.random() * 1.2}s`);
+                heart.style.setProperty('--heart-delay', `${index * 0.09}s`);
+                heart.style.setProperty('--heart-color', index % 2 === 0 ? '#a74850' : '#c77c78');
+                heartShower.append(heart);
+            }
+        }
+
+        yesButton.addEventListener('click', (event) => {
+            if (currentQuestion + 1 === questions.length) {
+                currentQuestion += 1;
+                noButton.hidden = true;
+                returnNoButton();
+                questionView.hidden = true;
+                document.querySelector('.quiz-heading').hidden = true;
+                createHeartParticles();
+                createFallingHearts();
+                finalView.hidden = false;
+                return;
+            }
+            runNoButton(event, true);
+            currentQuestion += 1;
+            showQuestion();
+        });
+
+        noButton.addEventListener('click', () => {
+            stopNoButtonRun();
+            noButton.hidden = true;
+            currentQuestion = 0;
+            showQuestion();
+            answerRow.hidden = true;
+            noResponse.hidden = false;
+            document.querySelector('#retry-button').focus();
+        });
+
+        document.querySelector('#retry-button').addEventListener('click', () => {
+            currentQuestion = 0;
+            noResponse.hidden = true;
+            answerRow.hidden = false;
+            noButton.hidden = false;
+            showQuestion();
+            document.querySelector('.answer-yes').focus();
+        });
+
+        function runNoButton(event, force = false) {
+            if (noButtonEscaping && !force) return;
+            if (force && noButtonEscaping) stopNoButtonRun();
+
+            const bounds = noButton.getBoundingClientRect();
+            const cardBounds = quizCard.getBoundingClientRect();
+            const yesBounds = yesButton.getBoundingClientRect();
+            const margin = 32;
+            const maxX = Math.max(margin, cardBounds.width - bounds.width - margin);
+            const maxY = Math.max(margin, cardBounds.height - bounds.height - margin);
+            const pointerX = event.clientX - cardBounds.left;
+            const pointerY = event.clientY - cardBounds.top;
+            const yesLeft = yesBounds.left - cardBounds.left;
+            const yesRight = yesBounds.right - cardBounds.left;
+            const startX = bounds.left - cardBounds.left;
+            let safeMinX = margin;
+            let safeMaxX = maxX;
+
+            if (startX >= yesLeft + yesBounds.width / 2) {
+                safeMinX = Math.min(maxX, yesRight + 14);
+            } else {
+                safeMaxX = Math.max(margin, yesLeft - bounds.width - 14);
+            }
+            const candidates = Array.from({ length: 28 }, () => ({
+                x: safeMinX + Math.random() * (safeMaxX - safeMinX),
+                y: margin + Math.random() * (maxY - margin)
+            }));
+            const startY = bounds.top - cardBounds.top;
+            const score = (point) => Math.hypot(point.x - pointerX, point.y - pointerY)
+                + Math.min(Math.hypot(point.x - startX, point.y - startY), 220) * 0.25;
+            candidates.sort((first, second) => score(second) - score(first));
+            const target = candidates[Math.floor(Math.random() * Math.min(5, candidates.length))];
+            const travelX = target.x - startX;
+            const travelY = target.y - startY;
+            const travelLength = Math.max(1, Math.hypot(travelX, travelY));
+            const curve = (Math.random() - 0.5) * 64;
+            const middleX = Math.min(safeMaxX, Math.max(safeMinX, (startX + target.x) / 2 - travelY / travelLength * curve));
+            const middleY = Math.min(maxY, Math.max(margin, (startY + target.y) / 2 + travelX / travelLength * curve));
+
+            noButtonEscaping = true;
+            if (!noButtonPlaceholder) {
+                noButtonPlaceholder = document.createElement('span');
+                noButtonPlaceholder.className = 'answer-no-placeholder';
+                noButtonPlaceholder.setAttribute('aria-hidden', 'true');
+                noButton.before(noButtonPlaceholder);
+            }
+            if (noButton.parentElement !== quizCard) quizCard.append(noButton);
+            noButton.style.position = 'absolute';
+            noButton.style.left = `${startX}px`;
+            noButton.style.top = `${startY}px`;
+            noButton.style.zIndex = '5';
+            noButton.classList.add('is-running');
+            noEscapeAnimation = noButton.animate([
+                { left: `${startX}px`, top: `${startY}px`, offset: 0 },
+                { left: `${middleX}px`, top: `${middleY}px`, offset: 0.46 },
+                { left: `${target.x}px`, top: `${target.y}px`, offset: 1 }
+            ], {
+                duration: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 520,
+                easing: 'cubic-bezier(0.2, 0.7, 0.3, 1)',
+                fill: 'forwards'
+            });
+            noEscapeAnimation.onfinish = () => {
+                noButton.style.left = `${target.x}px`;
+                noButton.style.top = `${target.y}px`;
+                noEscapeAnimation.cancel();
+                noEscapeAnimation = null;
+                noButton.classList.remove('is-running');
+                noButtonEscaping = false;
+            };
+        }
+
+        noButton.addEventListener('pointerenter', (event) => {
+            if (event.pointerType === 'mouse' || event.pointerType === 'pen') runNoButton(event);
+        });
+
+        let touchPointerId = null;
+        let touchPointerPosition = null;
+        noButton.addEventListener('pointerdown', (event) => {
+            if (event.pointerType !== 'touch') return;
+            touchPointerId = event.pointerId;
+            touchPointerPosition = { x: event.clientX, y: event.clientY };
+        });
+
+        noButton.addEventListener('pointermove', (event) => {
+            if (event.pointerType !== 'touch' || event.pointerId !== touchPointerId || !touchPointerPosition) return;
+            if (Math.hypot(event.clientX - touchPointerPosition.x, event.clientY - touchPointerPosition.y) < 24) return;
+            touchPointerPosition = { x: event.clientX, y: event.clientY };
+            runNoButton(event);
+        });
+
+        window.addEventListener('pointerup', (event) => {
+            if (event.pointerId !== touchPointerId) return;
+            touchPointerId = null;
+            touchPointerPosition = null;
+        });
+    </script>
+</body>
+</html>
