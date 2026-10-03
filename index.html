@@ -52,6 +52,12 @@
 
     </main>
 
+    <audio id="final-music" preload="none" loop playsinline>
+        <source src="./CUPSIZE%20-%20%D0%A6%D0%B5%D0%BB%D1%83%D1%8E%20%D1%82%D0%B5%D0%B1%D1%8F.ogg" type='audio/ogg; codecs="vorbis"'>
+        <source src="./CUPSIZE%20-%20%D0%A6%D0%B5%D0%BB%D1%83%D1%8E%20%D1%82%D0%B5%D0%B1%D1%8F.wav" type="audio/wav">
+        <source src="./CUPSIZE%20-%20%D0%A6%D0%B5%D0%BB%D1%83%D1%8E%20%D1%82%D0%B5%D0%B1%D1%8F.mp3" type="audio/mpeg">
+    </audio>
+
     <script>
         const questions = [
             { text: 'Ты меня любишь?' },
@@ -74,6 +80,7 @@
         const quizCard = document.querySelector('.quiz');
         const yesButton = document.querySelector('.answer-yes');
         const noButton = document.querySelector('.answer-no');
+        const finalMusic = document.querySelector('#final-music');
         let noButtonPlaceholder = null;
         let noButtonEscaping = false;
         let noEscapeAnimation = null;
@@ -200,6 +207,23 @@
             }
         }
 
+        function startFinalMusic() {
+            finalMusic.volume = 0;
+            const playback = finalMusic.play();
+            if (!playback) return;
+
+            playback.then(() => {
+                const fadeStart = performance.now();
+                function fadeVolume(now) {
+                    finalMusic.volume = Math.min(0.2, ((now - fadeStart) / 3000) * 0.2);
+                    if (finalMusic.volume < 0.2) requestAnimationFrame(fadeVolume);
+                }
+                requestAnimationFrame(fadeVolume);
+            }).catch((error) => {
+                console.error('Не удалось запустить музыку:', error);
+            });
+        }
+
         yesButton.addEventListener('click', (event) => {
             if (currentQuestion + 1 === questions.length) {
                 currentQuestion += 1;
@@ -209,6 +233,7 @@
                 document.querySelector('.quiz-heading').hidden = true;
                 createHeartParticles();
                 createFallingHearts();
+                startFinalMusic();
                 finalView.hidden = false;
                 return;
             }
