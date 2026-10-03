@@ -1,10 +1,10 @@
 :root {
 	color-scheme: light;
-	--background: #cfb0a7;
-	--ink: #483531;
-	--muted: #806760;
-	--paper: #f8f0e9;
-	--rose: #a74850;
+	--background: #ffffff;
+	--ink: #3f3f3f;
+	--muted: #707070;
+	--paper: #ffffff;
+	--rose: #666666;
 }
 
 * {
@@ -17,8 +17,11 @@ body {
 	margin: 0;
 	color: var(--ink);
 	background-color: var(--background);
-	background-image: radial-gradient(rgba(255, 248, 241, 0.2) 0.7px, transparent 0.7px);
-	background-size: 8px 8px;
+	background-image: linear-gradient(rgba(35, 30, 33, 0.14), rgba(35, 30, 33, 0.14)), url("./%D1%83%D0%BA.jpg");
+	background-position: center center;
+	background-size: cover;
+	background-repeat: no-repeat;
+	background-attachment: fixed;
 	font-family: "Trebuchet MS", "Segoe UI", sans-serif;
 }
 
@@ -40,10 +43,10 @@ button {
 	min-height: 580px;
 	margin: auto;
 	padding: 48px 54px 42px;
-	border: 1px solid rgba(255, 250, 244, 0.66);
+	border: 1px solid rgba(255, 255, 255, 0.8);
 	border-radius: 12px;
-	background: rgba(248, 240, 233, 0.82);
-	box-shadow: 0 18px 60px rgba(83, 52, 46, 0.09);
+	background: rgba(255, 255, 255, 0.82);
+	box-shadow: 0 18px 60px rgba(40, 40, 40, 0.12);
 	display: flex;
 	flex-direction: column;
 	justify-content: center;
@@ -54,7 +57,7 @@ button {
 .quiz::before {
 	position: absolute;
 	inset: 12px;
-	border: 1px solid rgba(72, 53, 49, 0.11);
+	border: 1px solid rgba(63, 63, 63, 0.14);
 	border-radius: 8px;
 	content: "";
 	pointer-events: none;
@@ -87,7 +90,7 @@ button {
 }
 
 .flourish-dot {
-	fill: #c77c78;
+	fill: #929292;
 }
 
 .quiz-heading {
@@ -282,7 +285,7 @@ h1.is-blurring {
 
 .retry-button:hover {
 	transform: translateY(-2px);
-	background: #913d45;
+	background: #4d4d4d;
 }
 
 .final-view[hidden],
@@ -313,26 +316,36 @@ h1.is-blurring {
 	font-size: var(--heart-size);
 	line-height: 1;
 	opacity: 0;
-	text-shadow: 0 1px 5px rgba(167, 72, 80, 0.16);
+	text-shadow: 0 1px 5px rgba(50, 50, 50, 0.16);
 	animation: heart-toss var(--heart-duration) cubic-bezier(0.33, 0, 0.67, 1) var(--heart-delay) infinite both;
 }
 
-.drawn-heart {
-	display: block;
+.heart-artwork {
 	position: relative;
 	z-index: 1;
 	width: min(100%, 360px);
+	aspect-ratio: 12 / 11;
 	margin: 0 auto;
-	overflow: visible;
+	contain: layout paint size;
+	}
+
+.heart-canvas {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	contain: strict;
+	pointer-events: none;
 }
 
-.heart-particle {
-	fill: var(--particle-color);
-	opacity: 0;
-	transform-box: fill-box;
-	transform-origin: center;
-	filter: drop-shadow(0 0 1px rgba(167, 72, 80, 0.28));
-	animation: gather-particle 1450ms cubic-bezier(0.16, 0.72, 0.24, 1) var(--particle-delay) both;
+.drawn-heart {
+	position: absolute;
+	inset: 0;
+	display: block;
+	width: 100%;
+	height: 100%;
+	overflow: visible;
+	pointer-events: none;
 }
 
 .heart-initials {
@@ -420,6 +433,10 @@ h1.is-blurring {
 }
 
 @media (max-width: 560px) {
+	body {
+		background-attachment: scroll;
+	}
+
 	.page-shell {
 		width: min(100% - 28px, 1024px);
 	}
